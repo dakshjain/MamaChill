@@ -7,4 +7,6 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="chip_background">#2E2E2E</color>
+    <color name="chip_background_selected">#3D2C5A</color>
 </resources>
