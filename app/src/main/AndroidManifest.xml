@@ -46,6 +46,15 @@
             android:foregroundServiceType="mediaPlayback" />
 
         <receiver
+            android:name=".AlarmActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.mamachill.app.ACTION_STOP" />
+                <action android:name="com.mamachill.app.ACTION_SNOOZE" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".AlarmReceiver"
             android:exported="false">
             <intent-filter>
