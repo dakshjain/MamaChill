@@ -1,8 +1,7 @@
 package com.mamachill.app
 
-import android.media.Ringtone
-import android.media.RingtoneManager
-import android.net.Uri
+import android.app.NotificationManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -12,12 +11,11 @@ import com.mamachill.app.databinding.ActivityAlarmFiringBinding
 class AlarmFiringActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityAlarmFiringBinding
-    private var ringtone: Ringtone? = null
+    private var alarmId = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Show on lock screen and wake the display
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
@@ -33,40 +31,37 @@ class AlarmFiringActivity : AppCompatActivity() {
         binding = ActivityAlarmFiringBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val alarmId = intent.getIntExtra("alarm_id", -1)
+        alarmId = intent.getIntExtra("alarm_id", -1)
         val label = intent.getStringExtra("alarm_label") ?: "Alarm"
         val toneUri = intent.getStringExtra("alarm_tone") ?: ""
 
         binding.tvAlarmLabel.text = label.ifEmpty { "Alarm" }
 
-        playTone(toneUri)
-
         binding.btnDismiss.setOnClickListener {
-            stopTone()
+            stopAlarm()
             finish()
         }
 
         binding.btnSnooze.setOnClickListener {
-            stopTone()
+            stopAlarm()
             AlarmScheduler.scheduleSnooze(this, alarmId, label, toneUri)
             finish()
         }
     }
 
-    private fun playTone(toneUri: String) {
-        val uri = if (toneUri.isNotEmpty()) Uri.parse(toneUri)
-                  else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        ringtone = RingtoneManager.getRingtone(this, uri)
-        ringtone?.play()
+    private fun stopAlarm() {
+        // Stop the foreground service (which stops the ringtone)
+        stopService(Intent(this, AlarmService::class.java))
+        // Dismiss the notification
+        if (alarmId != -1) {
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.cancel(alarmId)
+        }
     }
 
-    private fun stopTone() {
-        ringtone?.stop()
-        ringtone = null
-    }
-
-    override fun onDestroy() {
-        stopTone()
-        super.onDestroy()
+    // If user presses back, treat it as dismiss
+    override fun onBackPressed() {
+        stopAlarm()
+        super.onBackPressed()
     }
 }

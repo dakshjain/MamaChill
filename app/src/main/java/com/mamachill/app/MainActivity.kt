@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         requestExactAlarmPermission()
+        requestBatteryOptimizationExemption()
 
         val adapter = AlarmAdapter(
             onToggle = { alarm, enabled ->
@@ -56,6 +57,15 @@ class MainActivity : AppCompatActivity() {
 
         binding.fabAdd.setOnClickListener {
             addEditLauncher.launch(Intent(this, AddEditAlarmActivity::class.java))
+        }
+    }
+
+    private fun requestBatteryOptimizationExemption() {
+        val pm = getSystemService(android.os.PowerManager::class.java)
+        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+            })
         }
     }
 

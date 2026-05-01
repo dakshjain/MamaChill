@@ -2,11 +2,10 @@ package com.mamachill.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.core.app.NotificationCompat
+import android.os.Build
 import com.mamachill.app.data.AlarmDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +19,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val toneUri = intent.getStringExtra("alarm_tone") ?: ""
         val repeatDays = intent.getIntExtra("alarm_repeat", 0)
 
-        // Reschedule repeating alarm before showing the screen
+        // Reschedule repeating alarm
         if (repeatDays != 0) {
             val pending = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
@@ -35,31 +34,18 @@ class AlarmReceiver : BroadcastReceiver() {
 
         createNotificationChannel(context)
 
-        val fullScreenIntent = Intent(context, AlarmFiringActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        // Start foreground service — the only reliable way to show UI and play audio
+        // when the app is closed on Android 10+
+        val serviceIntent = Intent(context, AlarmService::class.java).apply {
             putExtra("alarm_id", alarmId)
             putExtra("alarm_label", label)
             putExtra("alarm_tone", toneUri)
         }
-        val fullScreenPending = PendingIntent.getActivity(
-            context, alarmId, fullScreenIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_alarm)
-            .setContentTitle(label.ifEmpty { "Alarm" })
-            .setContentText("Tap to dismiss")
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setFullScreenIntent(fullScreenPending, true)
-            .setAutoCancel(true)
-            .build()
-
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(alarmId, notification)
-
-        context.startActivity(fullScreenIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
     }
 
     private fun createNotificationChannel(context: Context) {
