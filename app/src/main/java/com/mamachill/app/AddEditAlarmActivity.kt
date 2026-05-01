@@ -132,7 +132,7 @@ class AddEditAlarmActivity : AppCompatActivity() {
     }
 
     private fun saveAlarm() {
-        val alarm = Alarm(
+        val base = Alarm(
             id = if (editAlarmId != -1) editAlarmId else 0,
             hour = selectedHour,
             minute = selectedMinute,
@@ -143,9 +143,18 @@ class AddEditAlarmActivity : AppCompatActivity() {
             toneName = selectedToneName
         )
 
-        if (editAlarmId != -1) viewModel.update(alarm) else viewModel.insert(alarm)
-        AlarmScheduler.schedule(this, alarm)
-        finish()
+        lifecycleScope.launch {
+            val alarmToSchedule = if (editAlarmId != -1) {
+                viewModel.update(base)
+                base
+            } else {
+                // Insert first to get the real auto-generated ID, then schedule with it
+                val realId = viewModel.insertAndGetId(base)
+                base.copy(id = realId)
+            }
+            AlarmScheduler.schedule(this@AddEditAlarmActivity, alarmToSchedule)
+            finish()
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

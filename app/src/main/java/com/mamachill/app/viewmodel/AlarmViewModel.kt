@@ -16,5 +16,6 @@ class AlarmViewModel(application: Application) : AndroidViewModel(application) {
     fun update(alarm: Alarm) = viewModelScope.launch { repository.update(alarm) }
     fun delete(alarm: Alarm) = viewModelScope.launch { repository.delete(alarm) }
 
+    suspend fun insertAndGetId(alarm: Alarm): Int = repository.insert(alarm).toInt()
     suspend fun getById(id: Int): Alarm? = repository.getById(id)
 }

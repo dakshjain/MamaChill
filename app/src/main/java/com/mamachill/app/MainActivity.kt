@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
 
         requestNotificationPermission()
-        requestExactAlarmPermission()
         requestBatteryOptimizationExemption()
         requestFullScreenIntentPermission()
 
