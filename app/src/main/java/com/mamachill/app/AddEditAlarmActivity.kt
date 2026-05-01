@@ -143,17 +143,7 @@ class AddEditAlarmActivity : AppCompatActivity() {
             toneName = selectedToneName
         )
 
-        lifecycleScope.launch {
-            val savedId = if (editAlarmId != -1) {
-                viewModel.update(alarm)
-                editAlarmId
-            } else {
-                viewModel.insert(alarm).toInt().also { /* id returned */ }
-                // Re-fetch to get the auto-generated id
-                -1
-            }
-            // Schedule via observer in MainActivity — finish and let it handle scheduling
-        }
+        if (editAlarmId != -1) viewModel.update(alarm) else viewModel.insert(alarm)
         AlarmScheduler.schedule(this, alarm)
         finish()
     }
