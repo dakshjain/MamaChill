@@ -1,7 +1,10 @@
 package com.mamachill.app
 
+import android.Manifest
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -10,7 +13,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.mamachill.app.data.Alarm
+import androidx.core.content.ContextCompat
 import com.mamachill.app.databinding.ActivityMainBinding
 import com.mamachill.app.viewmodel.AlarmViewModel
 
@@ -21,14 +24,20 @@ class MainActivity : AppCompatActivity() {
 
     private val addEditLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* no action needed after result */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        requestNotificationPermission()
         requestExactAlarmPermission()
         requestBatteryOptimizationExemption()
+        requestFullScreenIntentPermission()
 
         val adapter = AlarmAdapter(
             onToggle = { alarm, enabled ->
@@ -57,6 +66,31 @@ class MainActivity : AppCompatActivity() {
 
         binding.fabAdd.setOnClickListener {
             addEditLauncher.launch(Intent(this, AddEditAlarmActivity::class.java))
+        }
+    }
+
+    // Required at runtime on Android 13+ (API 33+) — without this notifications are silently blocked
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    // Android 14+ requires explicit user approval to use full-screen intents (lock-screen alarm UI)
+    private fun requestFullScreenIntentPermission() {
+        if (Build.VERSION.SDK_INT >= 34) {
+            val nm = getSystemService(NotificationManager::class.java)
+            if (!nm.canUseFullScreenIntent()) {
+                startActivity(
+                    Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENTS").apply {
+                        data = Uri.parse("package:$packageName")
+                    }
+                )
+            }
         }
     }
 
