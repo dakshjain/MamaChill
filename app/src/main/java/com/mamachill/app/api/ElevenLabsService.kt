@@ -12,7 +12,7 @@ import retrofit2.http.*
 interface ElevenLabsService {
 
     @Multipart
-    @POST("v1/voices/ivc/create")
+    @POST("v1/voices/add")
     suspend fun createIvcVoice(
         @Header("xi-api-key") apiKey: String,
         @Part("name") name: RequestBody,
