@@ -4,6 +4,7 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -26,15 +27,25 @@ class AddEditAlarmActivity : AppCompatActivity() {
     private var selectedMinute = 0
     private var selectedToneUri: Uri? = null
     private var selectedToneName = "Default"
+    private var selectedLocalAudioPath = ""
 
     private val ringtoneLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val uri: Uri? = result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             selectedToneUri = uri
-            selectedToneName = if (uri != null) {
-                RingtoneManager.getRingtone(this, uri)?.getTitle(this) ?: "Default"
-            } else "Default"
-            binding.btnTone.text = selectedToneName
+            selectedToneName = if (uri != null) RingtoneManager.getRingtone(this, uri)?.getTitle(this) ?: "Default" else "Default"
+            selectedLocalAudioPath = ""
+            updateToneDisplay()
+        }
+    }
+
+    private val voiceDialogueLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val path = result.data?.getStringExtra(VoiceDialogueActivity.EXTRA_AUDIO_PATH) ?: return@registerForActivityResult
+            selectedLocalAudioPath = path
+            selectedToneName = "Cloned Voice Dialogue"
+            selectedToneUri = null
+            updateToneDisplay()
         }
     }
 
@@ -49,9 +60,7 @@ class AddEditAlarmActivity : AppCompatActivity() {
 
         if (editAlarmId != -1) {
             supportActionBar?.title = "Edit Alarm"
-            lifecycleScope.launch {
-                viewModel.getById(editAlarmId)?.let { populateFrom(it) }
-            }
+            lifecycleScope.launch { viewModel.getById(editAlarmId)?.let { populateFrom(it) } }
         } else {
             supportActionBar?.title = "New Alarm"
         }
@@ -69,6 +78,10 @@ class AddEditAlarmActivity : AppCompatActivity() {
             })
         }
 
+        binding.btnVoiceDialogue.setOnClickListener {
+            voiceDialogueLauncher.launch(Intent(this, VoiceDialogueActivity::class.java))
+        }
+
         binding.btnSave.setOnClickListener { saveAlarm() }
     }
 
@@ -76,11 +89,21 @@ class AddEditAlarmActivity : AppCompatActivity() {
         selectedHour = alarm.hour
         selectedMinute = alarm.minute
         binding.etLabel.setText(alarm.label)
-        selectedToneName = alarm.toneName
+        selectedLocalAudioPath = alarm.localAudioPath
         selectedToneUri = alarm.toneUri.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-        binding.btnTone.text = selectedToneName
+        selectedToneName = if (alarm.localAudioPath.isNotEmpty()) "Cloned Voice Dialogue" else alarm.toneName
         updateTimeDisplay()
+        updateToneDisplay()
         setRepeatDays(alarm.repeatDays)
+    }
+
+    private fun updateToneDisplay() {
+        binding.btnTone.text = selectedToneName
+        if (selectedLocalAudioPath.isNotEmpty()) {
+            binding.tvVoiceBadge.visibility = View.VISIBLE
+        } else {
+            binding.tvVoiceBadge.visibility = View.GONE
+        }
     }
 
     private fun showTimePicker() {
@@ -104,8 +127,7 @@ class AddEditAlarmActivity : AppCompatActivity() {
             selectedHour > 12 -> selectedHour - 12
             else -> selectedHour
         }
-        binding.tvSelectedTime.text =
-            String.format(Locale.getDefault(), "%d:%02d", hour12, selectedMinute)
+        binding.tvSelectedTime.text = String.format(Locale.getDefault(), "%d:%02d", hour12, selectedMinute)
         binding.tvAmPm.text = if (selectedHour < 12) "AM" else "PM"
     }
 
@@ -140,15 +162,13 @@ class AddEditAlarmActivity : AppCompatActivity() {
             isEnabled = true,
             repeatDays = getRepeatDays(),
             toneUri = selectedToneUri?.toString() ?: "",
-            toneName = selectedToneName
+            toneName = selectedToneName,
+            localAudioPath = selectedLocalAudioPath
         )
-
         lifecycleScope.launch {
             val alarmToSchedule = if (editAlarmId != -1) {
-                viewModel.update(base)
-                base
+                viewModel.update(base); base
             } else {
-                // Insert first to get the real auto-generated ID, then schedule with it
                 val realId = viewModel.insertAndGetId(base)
                 base.copy(id = realId)
             }
@@ -157,8 +177,5 @@ class AddEditAlarmActivity : AppCompatActivity() {
         }
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
-    }
+    override fun onSupportNavigateUp(): Boolean { finish(); return true }
 }

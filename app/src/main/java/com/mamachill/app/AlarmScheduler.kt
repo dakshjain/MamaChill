@@ -20,6 +20,7 @@ object AlarmScheduler {
                 putExtra("alarm_label", alarm.label)
                 putExtra("alarm_tone", alarm.toneUri)
                 putExtra("alarm_repeat", alarm.repeatDays)
+                putExtra("local_audio_path", alarm.localAudioPath)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -60,6 +61,7 @@ object AlarmScheduler {
                 putExtra("alarm_label", label)
                 putExtra("alarm_tone", toneUri)
                 putExtra("alarm_repeat", 0)
+                putExtra("local_audio_path", "")
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

@@ -13,5 +13,6 @@ data class Alarm(
     // Bitmask: bit 0=Mon, bit 1=Tue, ..., bit 6=Sun. 0 = one-time alarm.
     val repeatDays: Int = 0,
     val toneUri: String = "",
-    val toneName: String = "Default"
+    val toneName: String = "Default",
+    val localAudioPath: String = ""   // Path to ElevenLabs-generated mp3, empty = use toneUri
 )

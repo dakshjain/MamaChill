@@ -182,12 +182,36 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginBottom="8dp"
                 android:text="Default"
                 android:textColor="#FFFFFF"
                 app:icon="@drawable/ic_alarm"
                 app:iconTint="#BB86FC"
                 app:strokeColor="#BB86FC" />
+
+            <!-- Voice dialogue -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVoiceDialogue"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Create Voice Dialogue"
+                android:textColor="#FFFFFF"
+                app:strokeColor="#03DAC5" />
+
+            <TextView
+                android:id="@+id/tvVoiceBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="#1A03DAC5"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:text="Cloned Voice Dialogue"
+                android:textColor="#03DAC5"
+                android:textSize="12sp"
+                android:visibility="gone" />
 
             <!-- Save -->
             <com.google.android.material.button.MaterialButton

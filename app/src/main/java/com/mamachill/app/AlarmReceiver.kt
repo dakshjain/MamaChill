@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.annotation.RequiresApi
 import com.mamachill.app.data.AlarmDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,11 +14,13 @@ import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context, intent: Intent) {
         val alarmId = intent.getIntExtra("alarm_id", -1)
         val label = intent.getStringExtra("alarm_label") ?: "Alarm"
         val toneUri = intent.getStringExtra("alarm_tone") ?: ""
         val repeatDays = intent.getIntExtra("alarm_repeat", 0)
+        val localAudioPath = intent.getStringExtra("local_audio_path") ?: ""
 
         // Reschedule repeating alarm
         if (repeatDays != 0) {
@@ -40,6 +43,7 @@ class AlarmReceiver : BroadcastReceiver() {
             putExtra("alarm_id", alarmId)
             putExtra("alarm_label", label)
             putExtra("alarm_tone", toneUri)
+            putExtra("local_audio_path", localAudioPath)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent)
@@ -48,6 +52,7 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(context: Context) {
         val channel = NotificationChannel(CHANNEL_ID, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
             description = "Alarm notifications"

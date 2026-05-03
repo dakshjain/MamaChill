@@ -4,22 +4,25 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.media.Ringtone
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import java.io.File
 
 class AlarmService : Service() {
 
-    private var ringtone: Ringtone? = null
+    private var mediaPlayer: MediaPlayer? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val alarmId = intent?.getIntExtra("alarm_id", -1) ?: -1
         val label = intent?.getStringExtra("alarm_label") ?: "Alarm"
         val toneUri = intent?.getStringExtra("alarm_tone") ?: ""
+        val localAudioPath = intent?.getStringExtra("local_audio_path") ?: ""
         val notifId = alarmId.takeIf { it != -1 } ?: 1
 
         val fullScreenPending = PendingIntent.getActivity(
@@ -29,6 +32,7 @@ class AlarmService : Service() {
                 putExtra("alarm_id", alarmId)
                 putExtra("alarm_label", label)
                 putExtra("alarm_tone", toneUri)
+                putExtra("local_audio_path", localAudioPath)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -49,6 +53,7 @@ class AlarmService : Service() {
                 putExtra("alarm_id", alarmId)
                 putExtra("alarm_label", label)
                 putExtra("alarm_tone", toneUri)
+                putExtra("local_audio_path", localAudioPath)
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -65,28 +70,55 @@ class AlarmService : Service() {
             .addAction(0, "Snooze 5 min", snoozePending)
             .build()
 
-        // Must call startForeground immediately — before any other work
         ServiceCompat.startForeground(
-            this,
-            notifId,
-            notification,
+            this, notifId, notification,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            else 0
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
         )
 
-        // Play ringtone after foreground is established
-        val uri = if (toneUri.isNotEmpty()) Uri.parse(toneUri)
-                  else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-        ringtone = RingtoneManager.getRingtone(this, uri)
-        ringtone?.play()
+        playAudio(localAudioPath, toneUri)
 
         return START_NOT_STICKY
     }
 
+    private fun playAudio(localAudioPath: String, toneUri: String) {
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                if (localAudioPath.isNotEmpty() && File(localAudioPath).exists()) {
+                    setDataSource(localAudioPath)
+                } else {
+                    val uri = if (toneUri.isNotEmpty()) Uri.parse(toneUri)
+                              else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    setDataSource(applicationContext, uri)
+                }
+                isLooping = true
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            // Fallback to default alarm sound
+            try {
+                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(applicationContext, uri)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
+            } catch (_: Exception) { }
+        }
+    }
+
     override fun onDestroy() {
-        ringtone?.stop()
-        ringtone = null
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
         super.onDestroy()
     }
 
