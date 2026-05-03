@@ -4,14 +4,12 @@ import android.content.Context
 
 object PrefsManager {
     private const val PREFS = "mamachill_prefs"
-    private const val KEY_API_KEY = "elevenlabs_api_key"
     private const val KEY_VOICE_ID = "voice_id"
     private const val KEY_VOICE_NAME = "voice_name"
 
-    private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    const val API_KEY = "sk_400b30a4fa1b12625db88bad2af6404364da1c06ee13b7ac"
 
-    fun getApiKey(ctx: Context): String = prefs(ctx).getString(KEY_API_KEY, "") ?: ""
-    fun setApiKey(ctx: Context, key: String) = prefs(ctx).edit().putString(KEY_API_KEY, key).apply()
+    private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun getVoiceId(ctx: Context): String = prefs(ctx).getString(KEY_VOICE_ID, "") ?: ""
     fun setVoiceId(ctx: Context, id: String) = prefs(ctx).edit().putString(KEY_VOICE_ID, id).apply()
@@ -21,3 +19,4 @@ object PrefsManager {
 
     fun hasVoice(ctx: Context) = getVoiceId(ctx).isNotEmpty()
 }
+

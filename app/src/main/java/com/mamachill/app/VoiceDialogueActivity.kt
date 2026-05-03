@@ -77,14 +77,13 @@ class VoiceDialogueActivity : AppCompatActivity() {
 
     private fun generateAudio(text: String) {
         setLoading(true)
-        val apiKey = PrefsManager.getApiKey(this)
         val voiceId = PrefsManager.getVoiceId(this)
 
         lifecycleScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
                     ElevenLabsClient.service.textToSpeech(
-                        apiKey, voiceId, TtsRequest(text)
+                        PrefsManager.API_KEY, voiceId, TtsRequest(text)
                     )
                 }
 

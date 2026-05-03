@@ -59,8 +59,6 @@ class VoiceSetupActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Clone Your Voice"
 
-        binding.etApiKey.setText(PrefsManager.getApiKey(this))
-
         val currentVoice = PrefsManager.getVoiceName(this)
         if (currentVoice.isNotEmpty()) {
             binding.tvCurrentVoice.text = "Current voice: $currentVoice"
@@ -89,16 +87,13 @@ class VoiceSetupActivity : AppCompatActivity() {
         binding.btnStopRecord.setOnClickListener { stopRecording() }
 
         binding.btnClone.setOnClickListener {
-            val apiKey = binding.etApiKey.text.toString().trim()
             val voiceName = binding.etVoiceName.text.toString().trim()
 
-            if (apiKey.isEmpty()) { toast("Enter your ElevenLabs API key"); return@setOnClickListener }
             if (voiceName.isEmpty()) { toast("Enter a name for your voice"); return@setOnClickListener }
             if (selectedAudioFile == null) { toast("Pick or record an audio sample first"); return@setOnClickListener }
 
             if (isRecording) stopRecording()
-            PrefsManager.setApiKey(this, apiKey)
-            cloneVoice(apiKey, voiceName)
+            cloneVoice(PrefsManager.API_KEY, voiceName)
         }
     }
 
